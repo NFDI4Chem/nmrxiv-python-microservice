@@ -10,26 +10,32 @@ import zipfile
 
 def get_name(molecule):
     """returns the nmrshiftdb id for each molecule"""
-    start = molecule.find('nmrshiftdb2 ') + 12
-    end = molecule.find('\n', start)
-    name = molecule[start:end]
+    start = 0
+    end = molecule.find('\n')
+    if end == 0:
+        start = molecule.find('nmrshiftdb2 ') + 12
+        end = molecule.find('\n', start)
     
+    name = molecule[start:end]
+    if '/' in name:
+        name = name.replace('/', '+')
     return name
 
 def write_nmredata(molecule):
     """Writes a molecule in an NMReData file named after its nmrshiftdb id"""
     name = get_name(molecule)
-    
-    f = open(name+'.nmredata', "w")
-    f.write(molecule)
-    f.close()
+    try:
+        f = open(name+'.nmredata', "w")
+        f.write(molecule)
+        f.close()
+    except:
+        print(name)
     
     pass
 
 def download_zips(molecule):
     """download all the raw NMR files from the links found in the NMReData file."""
     name = get_name(molecule)
-    print(name)
     if not os.path.exists(name):
         os.makedirs(name)
         os.chdir('./'+ name)
@@ -94,7 +100,7 @@ def unzip_spec_files():
 
           
 def structure_folders():
-    print('preparing the folders structure for proper submision to nmrXiv. This might take a while')
+    print('\npreparing the folders structure for proper submision to nmrXiv. This might take a while. Here you find the names of molecules in preparation:\n')
     for molecule in os.listdir("./"): 
         if (molecule != '60001975') and (os.path.isdir(molecule)):
             print(molecule)

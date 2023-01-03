@@ -12,6 +12,7 @@ def main():
     os.chdir('./output')
 
     URL = "https://sourceforge.net/projects/nmrshiftdb2/files/data/nmrshiftdb2.nmredata.sd/download"
+    print('Downloading NMReData file has started, this might take a little while.')
     response = requests.get(URL)
     open("nmrshiftdb2.nmredata.sd", "wb").write(response.content)
 
@@ -49,7 +50,7 @@ def main():
         os.makedirs('with_raw')
     os.chdir('./with_raw')
 
-    print('Downloading experimental NMR files, this might take a while. Here you can see the molecules IDs from NMRShiftDB: ')
+    print('Downloading experimental NMR files, this might take a while. Here you can see the molecules names from NMRShiftDB: ')
     for molecule in with_raw:
         download_zips(molecule)
     
