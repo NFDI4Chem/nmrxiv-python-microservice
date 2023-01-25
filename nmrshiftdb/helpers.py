@@ -115,7 +115,7 @@ def structure_folders():
                 if os.path.isdir(specFolder):
                     innerFolder = specFolder
                     #if "META-INF" not in os.listdir(innerFolder):
-                    while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder)):
+                    while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
                         for item in os.listdir(innerFolder):
                             if item != "META-INF":
                                 if os.path.isdir(innerFolder + '/' + item):
