@@ -51,10 +51,13 @@ def main():
     os.chdir('./with_raw')
 
     print('Downloading experimental NMR files, this might take a while. Here you can see the molecules names from NMRShiftDB: ')
+    n = 0
     for molecule in with_raw:
-        download_zips(molecule)
+        n = n + download_zips(molecule)
     
     print('NMRShiftDB downloading is finished')
+    print('The number of downloaded spectra is: ' + str(n))
+
     
     create_spec_folders()
     unzip_spec_files()

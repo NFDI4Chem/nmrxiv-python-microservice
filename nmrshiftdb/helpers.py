@@ -34,25 +34,30 @@ def write_nmredata(molecule):
     pass
 
 def download_zips(molecule):
-    """download all the raw NMR files from the links found in the NMReData file."""
+    """download all the raw NMR files from the links found in the NMReData file, and return the number of spectra m."""
     name = get_name(molecule)
+    print(name)
+    
+    
     if not os.path.exists(name):
         os.makedirs(name)
-        os.chdir('./'+ name)
+    os.chdir('./'+ name)
 
-        write_nmredata(molecule)
+    write_nmredata(molecule)
 
-        index = 0
-        while molecule.find('http', index) != -1:
-            start = molecule.find('http', index)
-            end = molecule.find('rawdata', start) + 7
-            index = end
+    m = 0
+    index = 0
+    while molecule.find('http', index) != -1:
+        m +=1
+        start = molecule.find('http', index)
+        end = molecule.find('rawdata', start) + 7
+        index = end
 
-            location = molecule[start:end]
-            wget.download(location)        
+        location = molecule[start:end]
+        wget.download(location)        
 
-        os.chdir("..")
-    pass
+    os.chdir("..")
+    return m
 
 def create_spec_folders():
     for molecule in os.listdir("./"): 
