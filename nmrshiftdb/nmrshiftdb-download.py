@@ -10,9 +10,8 @@ def main():
     if not os.path.exists('output'):
         os.makedirs('output')
     os.chdir('./output')
-
-    URL = "https://sourceforge.net/projects/nmrshiftdb2/files/data/nmrshiftdb2.nmredata.sd/download"
-    print('Downloading NMReData file has started, this might take a little while.')
+    
+    URL = "https://nmrshiftdb.nmr.uni-koeln.de/nmrshiftdb2.nmredata.sd"
     response = requests.get(URL)
     open("nmrshiftdb2.nmredata.sd", "wb").write(response.content)
 
@@ -20,49 +19,29 @@ def main():
     text = f.read()
     f.close() 
 
-    molecules = text.split('$$$$\n')[:-1]
-    print('The total number of molecules found in NMRShiftDB, including duplicates, is: '+ str(len(molecules)) + '\n')
-
-    with_raw = []
-    without_raw = []
-    for molecule in molecules:
-        if "http" in molecule:
-            with_raw.append(molecule)
-        else:
-            without_raw.append(molecule)
-
-    print('The number of molecules found in NMRShiftDB with raw NMR files, with duplicates, is: '+ str(len(with_raw)) + '\n')
-    print('The number of molecules found in NMRShiftDB without raw NMR files, with duplicates, is: '+ str(len(without_raw)) + '\n')
-    print('Writing NMReData files, this might take a while.')
-
-
-
-    if not os.path.exists('without_raw'):
-        os.makedirs('without_raw')
-    os.chdir('./without_raw')
-
-    for molecule in without_raw:
-        write_nmredata(molecule)
-
-
-    os.chdir("..")
-    if not os.path.exists('with_raw'):
-        os.makedirs('with_raw')
-    os.chdir('./with_raw')
-
-    print('Downloading experimental NMR files, this might take a while. Here you can see the molecules names from NMRShiftDB: ')
-    n = 0
-    for molecule in with_raw:
-        n = n + download_zips(molecule)
+    entries = text.split('$$$$\n')[:-1]
+    print('The total number of NMReData entries found in NMRShiftDB with raw data, including duplicated molecules, is: '+ str(len(entries)) + '\n')
     
-    print('NMRShiftDB downloading is finished')
-    print('The number of downloaded spectra is: ' + str(n))
-
+    number_of_projects =0
+    number_of_studies =0
+    number_of_spectra =0
     
-    create_spec_folders()
-    unzip_spec_files()
+    print('Downloading experimental NMR files. Here you can see the authors names from NMRShiftDB: ')
+
+    for entry in entries:
+        lst = download_zips(entry)
+        number_of_projects +=lst[0]
+        number_of_studies +=lst[1]
+        number_of_spectra +=lst[2]
+
+    print('NMRShiftDB downloading is finished\n')
+    print('The number of unique authors combinations corresponding to nmrXiv projects is: ' + str(number_of_projects))
+    print('The number of molecules corresponding to nmrXiv studies is: ' + str(number_of_studies))
+    print('The number of downloaded spectra corresponding to nmrXiv datasets is: ' + str(number_of_spectra))
+
+       
+    create_datasets_folders()
     structure_folders()
         
-
 if __name__ == "__main__":
     sys.exit(main())
