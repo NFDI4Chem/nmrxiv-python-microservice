@@ -11,9 +11,12 @@ After navigating to the current folder, "nmrshiftdb", run: python3 nmrshiftdb-do
 The folder contains two python files:
 - helpers.py has the functions.
 - nmrshiftdb-download.py is the script that we run.
-- output folder generated after running the script, containing the NMReData, along with two folders:
-  - without_raw: has the NMReData of the molecules that don't have raw data.
-  - with_raw: has the NMReData of the molecules that have raw data along with the experimental data.
+- output folder generated after running the script, containing the NMReData, along with folders organized and named after the unique combinations of authors found in NMRShiftDB. Within each folder one can find all the molecules credited to those authors structured as folders containing the Bruker datasets folder and the corresponding NMReData files. Datasets are named after the spectra IDs in NMRShiftDB. 
 
-### with_raw folder:
-This is the main folder where the data of interest for submission to nmrXiv exist. it has subfolders named after the molecules' IUPAC name, and within the subfolders, there are more subfolders named after the spectra ids in NMRShiftDB.
+## Findings: 
+- There are 38 unique combinations of authors, which corresponds to 38 nmrXiv projects.
+- There are 96 molecules corresponding to nmrXiv studies.
+- There are 559 spectra corresponding to nmrXiv datasets.
+- CDCl3 is the only solvent used. 
+- All temperatures are in Kelvin.
+
