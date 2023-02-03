@@ -20,3 +20,10 @@ The folder contains two python files:
 - CDCl3 is the only solvent used. 
 - All temperatures are in Kelvin.
 
+## Projects on nmrXiv:
+All projects will have the prefix "NMRShiftDB" to facilitate searching for them. "NMRShiftDB" will also be provided in the keywords.
+Projects are going to be named after the first and last author last names, e.g., : "NMRShiftDB-Jones-Williams".
+Studies are named after the molecules, when the name is not available, InChI was used instead.
+Datasets are named after the NMRShiftDB spectra IDs.
+
+[In this document]([url](https://docs.google.com/document/d/1xtgL0ha8BpF1GDNsgbI35EVuECZlusqrP0d-Z6sYL50/edit)), you can find the links to all the NMRShiftDB projects on nmrXiv (still not published).
