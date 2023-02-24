@@ -16,10 +16,14 @@ def get_name(entry):
     
     name = entry[start:end]
     
-    if 'InChI' in name:
+    if 'InChI' in name and name[:5]=="InChI":
         name = name[:name.find(' ')]
-    elif ';' in name:
-        name = name[:name.find(';')]
+    elif "IUPAC from" in name:
+        name = name[:name.find(' (IUPAC from')]
+    elif '; ' in name:
+         if "methyl 2,3,4,6-tetra-O-methyl-" not in name:
+            name = name[:name.find('; ')]
+    
     if '/' in name:
         name = name.replace('/', '\\')
     
