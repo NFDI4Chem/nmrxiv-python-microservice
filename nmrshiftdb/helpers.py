@@ -25,10 +25,23 @@ def get_name(entry):
     
     return name
 
+def get_solvent(entry):
+    """Returns the solvent of the NMReData entry."""
+    start = entry.find('_SOLVENT>') +10
+    end = entry.find('\\', start)
+    
+    slv = entry[start:end]
+    if '/' in slv:
+        slv = slv.replace('/', '+')
+    
+    return slv
+
+                     
+
 def get_temp(entry):
     """Returns the temperature of the NMReData entry."""
     start = entry.find('_TEMPERATURE>') +14
-    end = entry.find('.', start)
+    end = entry.find(' ', start)
     
     if start != 13:  
         temp = entry[start:end]
@@ -52,9 +65,10 @@ def get_authors(entry):
 def write_nmredata(entry):
     """Writes a molecule in an NMReData file named after its chemical name and temperature."""
     name = get_name(entry)
+    solvent = get_solvent(entry)        
     temp = get_temp(entry)
 
-    f = open(name+ '_'+ temp+ '.nmredata', "w")
+    f = open(name+ '_'+ solvent+ '_' + temp+ '.nmredata', "w")
     f.write(entry)
     f.close()
     
@@ -63,7 +77,7 @@ def write_nmredata(entry):
 def download_zips(entry):
     """download all the raw NMR files from the links found in the NMReData file, and return the number of projects, studies, and datasets in a list."""
     authors = get_authors(entry)
-    name = get_name(entry)
+    name = get_name(entry) + '_' + get_solvent(entry) 
     
     number_of_projects =0
     number_of_studies =0
@@ -150,23 +164,24 @@ def structure_folders():
                 for molecule in os.listdir(project_folder):
                     print(molecule)
                     study_folder = project_folder + '/' + molecule
-                    for spectrum in os.listdir(study_folder):
-                        if spectrum != '60003332_1H':
-                            dataset_folder = study_folder + '/' + spectrum
-                            if os.path.isdir(dataset_folder):
-                                innerFolder = dataset_folder
-                                #if "META-INF" not in os.listdir(innerFolder):
-                                while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
-                                    for item in os.listdir(innerFolder):
-                                        if item != "META-INF":
-                                            if os.path.isdir(innerFolder + '/' + item):
-                                                innerFolder +=  '/' + item
+                    if os.path.isdir(study_folder):
+                        for spectrum in os.listdir(study_folder):
+                            if spectrum != '60003332_1H':
+                                dataset_folder = study_folder + '/' + spectrum
+                                if os.path.isdir(dataset_folder):
+                                    innerFolder = dataset_folder
+                                    #if "META-INF" not in os.listdir(innerFolder):
+                                    while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
+                                        for item in os.listdir(innerFolder):
+                                            if item != "META-INF":
+                                                if os.path.isdir(innerFolder + '/' + item):
+                                                    innerFolder +=  '/' + item
 
 
-                                for f in os.listdir(innerFolder):
-                                    try:
-                                        shutil.move(innerFolder + '/'+ f, dataset_folder) 
-                                    except:
-                                        print(innerFolder)
+                                    for f in os.listdir(innerFolder):
+                                        try:
+                                            shutil.move(innerFolder + '/'+ f, dataset_folder) 
+                                        except:
+                                            print(innerFolder)
 
 pass
