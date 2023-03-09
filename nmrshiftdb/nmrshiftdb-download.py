@@ -8,8 +8,6 @@ from helpers import*
 def main():
     print('NMRShiftDB downloading script has started. Please find downloaded items in the folder "output."\n')
     
-    print('NMRShiftDB downloading script has started. Please find downloaded items in the folder "output."\n')
-    
     if not os.path.exists('output'):
         os.makedirs('output')
     os.chdir('./output')
@@ -17,6 +15,7 @@ def main():
     URL = "https://nmrshiftdb.nmr.uni-koeln.de/nmrshiftdb2.nmredata.sd"
     response = requests.get(URL)
     open("nmrshiftdb2.nmredata.sd", "wb").write(response.content)
+
 
     suppl =SDMolSupplier('nmrshiftdb2.nmredata.sd')
     print('The total number of NMReData entries found in NMRShiftDB with raw data, including duplicated molecules, is: '+ str(len(suppl)) + '\n')
@@ -33,6 +32,7 @@ def main():
        
     create_datasets_folders()
     unzipper()
+    rename_folders()
     #structure_folders()
         
 if __name__ == "__main__":

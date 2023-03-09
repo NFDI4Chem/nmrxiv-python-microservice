@@ -1,17 +1,16 @@
 """NMRshiftDB Import Helpers.
 
-This module includes functions used to export NMRShiftDB database as an SDF file with NMReData entried and to use those entries to detect the locations of the raw NMR files and download them too. Finally, the downloaded files are unzipped and restructured for 
+This module includes functions used to export NMRShiftDB database as an SDF file with NMReData entried and to use those entries to detect the locations of the raw NMR files and download them too. Finally, the downloaded files are unzipped and restructured to for 
 nmrXiv submission.
 """
 import os
 import html
 import wget
 import shutil
+import codecs
 import zipfile
-
-
-from io import StringIO
 from rdkit import Chem
+from io import StringIO
 from rdkit.Chem.rdchem import Mol
 
 def get_authors(mol):
@@ -21,7 +20,9 @@ def get_authors(mol):
     if ':' in authors:
         authors = authors[:authors.find(':')]
         
-    if authors == "Nils Schoerer" or authors == "Nils Schloerer": 
+    
+    Nils_names = ["Nils Schoerer", "Nils Schloerer"]
+    if authors in Nils_names: 
         authors = "Nils Schlörer"
     return authors
 
@@ -104,6 +105,8 @@ def write_nmredata(mol):
     
     pass
 
+
+
 def download_zips(MolSupplier):
     """download all the raw NMR files from the links found in the NMReData file, and return the number of projects, studies, and datasets in a list."""
 
@@ -113,6 +116,15 @@ def download_zips(MolSupplier):
     
     mols = []
     
+    os.makedirs("with_issues")
+    os.makedirs("without_issues")
+    lst = ['Nadine Kümmerer', 
+           "Sean R. Johnson; Wajid Waheed Bhat; Radin Sadre; Garret P. Miller; Alekzander Sky Garcia; Björn Hamberger", 
+           "Sean Johnson",
+           "Franziska Reuß; Klaus-Peter Zeller; Hans-Ullrich Siehl; Stefan Berger; Dieter Sicker",
+           "Stefan Kuhn"]
+
+    
     for mol in MolSupplier:
         authors = get_authors(mol)
         name = get_name(mol)
@@ -121,19 +133,24 @@ def download_zips(MolSupplier):
         
         mols.append(name)
         
-        if not os.path.exists(authors):
+        if authors in lst:
+            prefix = "with_issues/"
+        else:
+            prefix = "without_issues/"
+
+        if not os.path.exists(prefix+authors):
             print(authors)
             number_of_projects +=1
-            os.makedirs(authors)
-        os.chdir('./'+ authors)
-        
+            os.makedirs(prefix+authors)
+        os.chdir('./'+ prefix+authors)
+
         if not os.path.exists(sample_name):
             number_of_studies +=1
 
             os.makedirs(sample_name)
         os.chdir('./'+ sample_name)
         write_nmredata(mol)
-        
+
         links = get_links(mol)
         number_of_spectra += len(links)
         for link in links:
@@ -143,17 +160,17 @@ def download_zips(MolSupplier):
                 print(link)
                 print(authors)
                 print(name)
-                
-        os.chdir("../..")
+
+        os.chdir("../../..")
     mols = set(mols)
     number_of_mols = len(mols)
     return [number_of_projects, number_of_mols, number_of_studies, number_of_spectra]
 
-
 def create_datasets_folders():
     """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
+    os.chdir('./without_issues')
     for authors in os.listdir("./"):
-        if (authors != 'Nadine Kümmerer') and (os.path.isdir(authors)):
+        if os.path.isdir(authors):
             project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
                 if os.path.isdir(project_folder + '/' + molecule):
@@ -172,7 +189,7 @@ def unzipper():
     """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
     print('Unzipping spectra files in the corresponding created datasets folders. This might take a little while. Following, you can find the names of the authors folders where the spectra files are getting unzipped.\n')
     for authors in os.listdir("./"):
-        if (authors != 'Nadine Kümmerer') and (os.path.isdir(authors)):
+        if os.path.isdir(authors):
             print(authors)
             project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
@@ -181,7 +198,7 @@ def unzipper():
                         study_folder = project_folder + '/' + molecule
                         for spectrum in os.listdir(study_folder):
                             if os.path.isdir(study_folder + '/' + spectrum):
-                                dataset_folder = study_folder + '/' + name
+                                dataset_folder = study_folder + '/' + spectrum
                                 for file in os.listdir(dataset_folder):
                                     if '.zip' in dataset_folder + '/' +file:
                                         try:
@@ -191,18 +208,60 @@ def unzipper():
                                         except:
                                             pass
 
-    print('\nunzipping the following files has failed. Please try to unzip them manually:')
     for path, directories, files in os.walk("."):
         for file in files:
             if 'zip' in file:
-                try: 
-                    with zipfile.ZipFile(os.path.join(path, file), 'r') as zip_ref:
-                        zip_ref.extractall(path)
-                    os.remove(os.path.join(path, file))
-                except:
-                    print(os.path.join(path, file))
+                with zipfile.ZipFile(os.path.join(path, file), 'r') as zip_ref:
+                    zip_ref.extractall(path)
+                os.remove(os.path.join(path, file))
+               
     pass
 
+def get_Bruker_number(innerFolder):
+    if "acqu" in os.listdir(innerFolder):
+        with codecs.open(innerFolder + '/acqu', 'r', encoding='utf-8',
+                         errors='ignore') as f:
+
+            lines = f.readlines()
+        for line in lines:
+            if 'acqu' in line:
+                break
+        else:
+            print(innerFolder)
+        line = line[:line.rfind('/acqu')]
+        if line[-1] == '/':
+            line = line[:-1]
+        line = line[line.rfind('/')+1:]
+        return line
+    else:
+        print(innerFolder)
+        pass
+    pass
+
+def rename_folders():
+    for authors in os.listdir("./"): 
+        if os.path.isdir(authors):
+            project_folder = os.getcwd() + '/' + authors
+            for molecule in os.listdir(project_folder):
+                study_folder = project_folder + '/' + molecule
+                if os.path.isdir(study_folder):
+                    for spectrum in os.listdir(study_folder):
+                        if spectrum != '60003332_1H':
+                            dataset_folder = study_folder + '/' + spectrum
+                            if os.path.isdir(dataset_folder):
+                                innerFolder = dataset_folder
+                                while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
+                                    for item in os.listdir(innerFolder):
+                                        if os.path.isdir(innerFolder + '/' + item):
+                                            innerFolder +=  '/' + item
+
+
+                                suffix = innerFolder[innerFolder.rfind("/")+1:]
+                                n = get_Bruker_number(innerFolder)
+                                target = innerFolder[:innerFolder.rfind(suffix)] +n
+                                print(target)
+                                os.rename(innerFolder, target)
+    pass
           
 def structure_folders():
     """Move files and folders to restructure them in a way suitable for nmrXiv submission."""
