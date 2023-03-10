@@ -168,8 +168,7 @@ def download_zips(MolSupplier):
 
 def create_datasets_folders():
     """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
-    os.chdir('./without_issues')
-    for authors in os.listdir("./"):
+    for authors in os.listdir("./without_issues"):
         if os.path.isdir(authors):
             project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
@@ -188,7 +187,7 @@ def create_datasets_folders():
 def unzipper():
     """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
     print('Unzipping spectra files in the corresponding created datasets folders. This might take a little while. Following, you can find the names of the authors folders where the spectra files are getting unzipped.\n')
-    for authors in os.listdir("./"):
+    for authors in os.listdir("./without_issues"):
         if os.path.isdir(authors):
             print(authors)
             project_folder = os.getcwd() + '/' + authors
@@ -206,14 +205,17 @@ def unzipper():
                                                 zip_ref.extractall(dataset_folder)
                                             os.remove(dataset_folder + '/' +file)
                                         except:
-                                            pass
+                                            print(dataset_folder + '/' +file)
 
-    for path, directories, files in os.walk("."):
+    for path, directories, files in os.walk("./without_issues"):
         for file in files:
-            if 'zip' in file:
-                with zipfile.ZipFile(os.path.join(path, file), 'r') as zip_ref:
-                    zip_ref.extractall(path)
-                os.remove(os.path.join(path, file))
+            if '.zip' in file:
+                try:
+                    with zipfile.ZipFile(os.path.join(path, file), 'r') as zip_ref:
+                        zip_ref.extractall(path)
+                    os.remove(os.path.join(path, file))
+                except:
+                    print(path)
                
     pass
 
@@ -239,7 +241,7 @@ def get_Bruker_number(innerFolder):
     pass
 
 def rename_folders():
-    for authors in os.listdir("./"): 
+    for authors in os.listdir("./without_issues"): 
         if os.path.isdir(authors):
             project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
@@ -262,37 +264,51 @@ def rename_folders():
                                 print(target)
                                 os.rename(innerFolder, target)
     pass
-          
+
 def structure_folders():
     """Move files and folders to restructure them in a way suitable for nmrXiv submission."""
     print('\npreparing the folders structure for proper submision to nmrXiv. This might take a while. Here you find the names of molecules in preparation:\n')
     for authors in os.listdir("./"): 
-        if authors != 'Nadine Kümmerer':
-            if os.path.isdir(authors):
-                print('\n')
-                print(authors)
-                project_folder = os.getcwd() + '/' + authors
-                for molecule in os.listdir(project_folder):
-                    print(molecule)
-                    study_folder = project_folder + '/' + molecule
-                    if os.path.isdir(study_folder):
-                        for spectrum in os.listdir(study_folder):
-                            if spectrum != '60003332_1H':
-                                dataset_folder = study_folder + '/' + spectrum
-                                if os.path.isdir(dataset_folder):
-                                    innerFolder = dataset_folder
-                                    #if "META-INF" not in os.listdir(innerFolder):
-                                    while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
-                                        for item in os.listdir(innerFolder):
-                                            if item != "META-INF":
-                                                if os.path.isdir(innerFolder + '/' + item):
-                                                    innerFolder +=  '/' + item
+        if os.path.isdir(authors):
+            project_folder = os.getcwd() + '/' + authors
+            for molecule in os.listdir(project_folder):
+                study_folder = project_folder + '/' + molecule
+                if os.path.isdir(study_folder):
+                    for spectrum in os.listdir(study_folder):
+                        dataset_folder = study_folder + '/' + spectrum
+                        if os.path.isdir(dataset_folder):
+                            innerFolder = dataset_folder
+                            while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
+                                for item in os.listdir(innerFolder):
+                                    if os.path.isdir(innerFolder + '/' + item):
+                                        innerFolder +=  '/' + item
 
+                            
+                            if innerFolder[innerFolder.rfind('/')+1:] not in os.listdir(study_folder):
+                                try:
+                                    shutil.move(innerFolder, study_folder) 
+                                except:
+                                    print(innerFolder)
+                            else:
+                                try:
+                                    shutil.move(project_folder, "./with_issues") 
+                                except:
+                                    print(innerFolder)
+                            
 
-                                    for f in os.listdir(innerFolder):
-                                        try:
-                                            shutil.move(innerFolder + '/'+ f, dataset_folder) 
-                                        except:
-                                            print(innerFolder)
+def delete_empty_folders(root):
 
-pass
+    deleted = set()
+    
+    for current_dir, subdirs, files in os.walk(root, topdown=False):
+
+        still_has_subdirs = any(
+            _ for subdir in subdirs
+            if os.path.join(current_dir, subdir) not in deleted
+        )
+    
+        if not any(files) and not still_has_subdirs:
+            os.rmdir(current_dir)
+            deleted.add(current_dir)
+
+    return deleted

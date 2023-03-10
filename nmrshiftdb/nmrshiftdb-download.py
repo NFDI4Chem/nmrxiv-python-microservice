@@ -33,7 +33,7 @@ def main():
     create_datasets_folders()
     unzipper()
     rename_folders()
-    #structure_folders()
-        
+    structure_folders()
+    delete_empty_folders(os.getcwd())
 if __name__ == "__main__":
     sys.exit(main())
