@@ -1,3 +1,23 @@
+"""NMRshiftDB Import Helpers.
+
+This module includes functions used to export NMRShiftDB database as an SDF file with NMReData entries,
+which are to detect the locations of the raw NMR files and download them too. 
+Finally, the downloaded files are unzipped and restructured for nmrXiv submission.
+""" 
+
+import os
+import html
+import wget
+import shutil
+import codecs
+import zipfile
+import requests
+from rdkit import Chem
+from io import StringIO
+from rdkit.Chem.rdchem import Mol
+from rdkit.Chem import SDMolSupplier
+
+
 def get_sdf_as_SDMolSupplier(url, name):
     "Download an sdf file from a URL into a named file, and return an SDMolSupplier object with the entries there."
     
