@@ -9,7 +9,6 @@ def main():
     url = "https://nmrshiftdb.nmr.uni-koeln.de/nmrshiftdb2.nmredata.sd"
     suppl = get_sdf_as_SDMolSupplier(url, "nmrshiftdb2.nmredata.sd")
     print('The total number of NMReData entries found in NMRShiftDB with raw data, including duplicated molecules, is: '+ str(len(suppl)) + '\n')
-
     
     lst = download_zips(suppl)
     

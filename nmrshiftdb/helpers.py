@@ -1,18 +1,3 @@
-"""NMRshiftDB Import Helpers.
-
-This module includes functions used to export NMRShiftDB database as an SDF file with NMReData entried and to use those entries to detect the locations of the raw NMR files and download them too. Finally, the downloaded files are unzipped and restructured to for 
-nmrXiv submission.
-"""
-import os
-import html
-import wget
-import shutil
-import codecs
-import zipfile
-from rdkit import Chem
-from io import StringIO
-from rdkit.Chem.rdchem import Mol
-
 def get_sdf_as_SDMolSupplier(url, name):
     "Download an sdf file from a URL into a named file, and return an SDMolSupplier object with the entries there."
     
@@ -173,9 +158,14 @@ def download_zips(MolSupplier):
         'Sean R. Johnson; Wajid Waheed Bhat; Radin Sadre; Garret P. Miller; Alekzander Sky Garcia; Björn Hamberger', 
         'Sean Johnson',
         'Franziska Reuß; Klaus-Peter Zeller; Hans-Ullrich Siehl; Stefan Berger; Dieter Sicker',
-        'Stefan Kuhn']
+        'Stefan Kuhn',
+        'Rainer Haessner',
+        'Nils Schlörer',
+        'Raphael Stoll',
+        'Stefan Berger; Dieter Sicker'
+    ]
 
-    
+
     for mol in MolSupplier:
         authors = get_authors(mol)
         name = get_name(mol)
@@ -236,32 +226,38 @@ def create_datasets_folders():
                                 os.makedirs(dataset_folder)
                                 shutil.move(study_folder+ '/' +spectrum, dataset_folder)
     
-    print("Creating folders to unzip spectra files is done.")
+    print("Creating folders to unzip spectra files is done. \n")
     pass
 
 
 def unzipper():
-    """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
-    print('Unzipping spectra files in the corresponding created datasets folders. This might take a little while. Following, you can find the names of the authors folders where the spectra files are getting unzipped.\n')
+    """Create folders for each dataset and unzip the downloaded spectrum file there. 
+    Then delete the zip files."""
+    
+    print("""Unzipping spectra files in the corresponding created datasets folders. 
+    This might take a little while. Following, you can find the names of the authors 
+    folders where the spectra files are getting unzipped.\n""")
+    
+    
     for authors in os.listdir("./without_issues"):
-        if os.path.isdir(authors):
+        if os.path.isdir("./without_issues/" + authors):
+            project_folder = os.getcwd() + '/without_issues/' + authors
             print(authors)
-            project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
                 if os.path.isdir(project_folder + '/' + molecule):
                     if os.path.isdir(project_folder + '/' + molecule):
-                        study_folder = project_folder + '/' + molecule
-                        for spectrum in os.listdir(study_folder):
-                            if os.path.isdir(study_folder + '/' + spectrum):
-                                dataset_folder = study_folder + '/' + spectrum
-                                for file in os.listdir(dataset_folder):
-                                    if '.zip' in dataset_folder + '/' +file:
+                        sample_folder = project_folder + '/' + molecule
+                        for spectrum in os.listdir(sample_folder):
+                            if os.path.isdir(sample_folder + '/' + spectrum):
+                                spectrum_folder = sample_folder + '/' + spectrum
+                                for file in os.listdir(spectrum_folder):
+                                    if '.zip' in spectrum_folder + '/' +file:
                                         try:
-                                            with zipfile.ZipFile(dataset_folder + '/' +file, 'r') as zip_ref:
-                                                zip_ref.extractall(dataset_folder)
-                                            os.remove(dataset_folder + '/' +file)
+                                            with zipfile.ZipFile(spectrum_folder + '/' +file, 'r') as zip_ref:
+                                                zip_ref.extractall(spectrum_folder)
+                                            os.remove(spectrum_folder + '/' +file)
                                         except:
-                                            print(dataset_folder + '/' +file)
+                                            print(spectrum_folder + '/' +file)
 
     for path, directories, files in os.walk("./without_issues"):
         for file in files:
@@ -276,6 +272,8 @@ def unzipper():
     pass
 
 def get_Bruker_number(innerFolder):
+    """Find the Bruker instrument original sample number from 'acqu' file."""
+    
     if "acqu" in os.listdir(innerFolder):
         with codecs.open(innerFolder + '/acqu', 'r', encoding='utf-8',
                          errors='ignore') as f:
@@ -297,9 +295,11 @@ def get_Bruker_number(innerFolder):
     pass
 
 def rename_folders():
+    """Rename the Bruker folders for spectra that were initially named by users to 
+    their original instrument name."""
     for authors in os.listdir("./without_issues"): 
-        if os.path.isdir(authors):
-            project_folder = os.getcwd() + '/' + authors
+        if os.path.isdir("./without_issues/" + authors):
+            project_folder = os.getcwd() + '/without_issues/' + authors
             for molecule in os.listdir(project_folder):
                 study_folder = project_folder + '/' + molecule
                 if os.path.isdir(study_folder):
@@ -317,14 +317,14 @@ def rename_folders():
                                 suffix = innerFolder[innerFolder.rfind("/")+1:]
                                 n = get_Bruker_number(innerFolder)
                                 target = innerFolder[:innerFolder.rfind(suffix)] +n
-                                print(target)
                                 os.rename(innerFolder, target)
+    print("""Spectra folders were renamed to their original instrument number.""")
     pass
 
 def structure_folders():
     """Move files and folders to restructure them in a way suitable for nmrXiv submission."""
     print('\npreparing the folders structure for proper submision to nmrXiv. This might take a while. Here you find the names of molecules in preparation:\n')
-    for authors in os.listdir("./"): 
+    for authors in os.listdir("./without_issues"): 
         if os.path.isdir(authors):
             project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
@@ -344,15 +344,13 @@ def structure_folders():
                                 try:
                                     shutil.move(innerFolder, study_folder) 
                                 except:
-                                    print(innerFolder)
+                                    pass
                             else:
-                                try:
-                                    shutil.move(project_folder, "./with_issues") 
-                                except:
-                                    print(innerFolder)
-                            
+                                print(innerFolder)
+    pass
 
 def delete_empty_folders(root):
+    """Delete all the empty folders and the ones containing only empty folders."""
 
     deleted = set()
     
@@ -367,4 +365,4 @@ def delete_empty_folders(root):
             os.rmdir(current_dir)
             deleted.add(current_dir)
 
-    return deleted
+    pass
