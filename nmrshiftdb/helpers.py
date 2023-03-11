@@ -13,10 +13,30 @@ from rdkit import Chem
 from io import StringIO
 from rdkit.Chem.rdchem import Mol
 
+def get_sdf_as_SDMolSupplier(url, name):
+    "Download an sdf file from a URL into a named file, and return an SDMolSupplier object with the entries there."
+    
+    print("""NMRShiftDB downloading script has started. Please find downloaded items in the folder 'output'
+    where we provide two folders for projects that are ready for submission (without_issues), and the 
+    problematic ones (with_issues) \n""")
+    
+    if not os.path.exists('output'):
+        os.makedirs('output')
+    os.chdir('./output')
+    
+    response = requests.get(url)
+    open(name, "wb").write(response.content)
+    
+    return SDMolSupplier(name)
+
 def get_authors(mol):
-    """Returns the authors of the NMReData entry."""
+    """Returns the authors from the corresponding tag in a rdkit.Chem.rdchem Mol (mol)"""
+    
+    # Authors have different tags, but they are always the second tag.
     authors_tag = mol.GetPropNames()[1]
     authors = Mol.GetProp(mol, authors_tag)
+    
+    # Remove article name
     if ':' in authors:
         authors = authors[:authors.find(':')]
         
@@ -27,27 +47,32 @@ def get_authors(mol):
     return authors
 
 def get_molecule_id(mol): 
-    """Returns the molecule NMRShiftDB ID."""
+    """Returns the molecule NMRShiftDB ID from the corresponding tag NMREDATA_ID 
+    in a rdkit.Chem.rdchem Mol (mol)"""
+
     value = Mol.GetProp(mol, 'NMREDATA_ID')
     ID = value[value.find('DB_ID=')+6: -1]
     
     return ID
 
 def get_links(mol):
-    """Returns the name of the NMReData entry."""
+    """Returns the all the spectra links from one rdkit.Chem.rdchem Mol (mol),
+    which corresponds to one NMReData block."""
+    
     spectra_tags = [tag for tag in mol.GetPropNames() if "1D" in tag or "2D" in tag]
     values = [Mol.GetProp(mol, tag) for tag in spectra_tags if 'http' in Mol.GetProp(mol, tag)]
     
-    links = []
-    for value in values:
-        link = value[value.find('=')+1:value.find('\\')]
-        links.append(link)
+    links = [value[value.find('=')+1:value.find('\\')] for value in values]
+    
     return links
 
 def get_name(mol):
-    """Returns the name of the NMReData entry."""
+    """Returns the molecule chemical name from the corresponding tag CHEMNAME 
+    in a rdkit.Chem.rdchem Mol (mol)"""
+    
     name = Mol.GetProp(mol, 'CHEMNAME')
     
+    # removing the synonyms
     if 'InChI' in name and name[:5]=="InChI":
         name = name[:name.find(' ')]
     elif "IUPAC from" in name:
@@ -56,12 +81,19 @@ def get_name(mol):
          if "methyl 2,3,4,6-tetra-O-methyl-" not in name:
             name = name[:name.find('; ')]
     
+    #ensuring the molecule name doesn't affect the files pathes
     if '/' in name:
         name = name.replace('/', '\\')
+        
+    # replacing ascii characters with special HTML characters
     name = html.unescape(name)
     return name
 
 def get_sample_name(mol):
+    """A sample consists of molecule and solvent. 
+    Its name has the NMRShiftDB molecule ID with the names of the molecule and the solvent, 
+    taken from a rdkit.Chem.rdchem Mol (mol)"""
+    
     ID =get_molecule_id(mol)
     name = get_name(mol)
     solvent = get_solvent(mol)
@@ -70,9 +102,12 @@ def get_sample_name(mol):
     return sample_name
 
 def get_solvent(mol):
-    """Returns the solvent of the NMReData entry."""
+    """Returns the NMR solvent from the corresponding tag NMREDATA_SOLVENT 
+    in a rdkit.Chem.rdchem Mol (mol)"""
+    
     solvent = Mol.GetProp(mol, 'NMREDATA_SOLVENT')
         
+    #ensuring the molecule name doesn't affect the files pathes
     if '/' in solvent:
         solvent = solvent.replace('/', ', ')
    
@@ -80,7 +115,9 @@ def get_solvent(mol):
     return solvent
 
 def get_temperature(mol):
-    """Returns the temperature of the NMReData entry."""
+    """Returns the temperature from the corresponding tag NMREDATA_TEMPERATURE 
+    in a rdkit.Chem.rdchem Mol (mol)"""
+    
     try:
         temperature = Mol.GetProp(mol, 'NMREDATA_TEMPERATURE')
         temperature = temperature[:temperature.find(' ')]
@@ -90,11 +127,13 @@ def get_temperature(mol):
     return temperature
 
 def write_nmredata(mol):
-    """Writes a molecule in an NMReData file named after its chemical name, solvent and temperature."""
+    """Writes a rdkit.Chem.rdchem Mol molecule in an NMReData file,
+    named after its sample name and temperature."""
+    
     sample_name = get_sample_name(mol)
     temp = get_temperature(mol)
 
-    file_name = sample_name+ '_' + temp+ '.nmredata'
+    file_name =  sample_name+ '_' + temp+ '.nmredata'
     
     sio = StringIO()
     writer = Chem.SDWriter(sio)
@@ -105,35 +144,46 @@ def write_nmredata(mol):
     
     pass
 
-
-
 def download_zips(MolSupplier):
-    """download all the raw NMR files from the links found in the NMReData file, and return the number of projects, studies, and datasets in a list."""
+    """
+    - Create folders for projects with pending issues (with_issues), and the rest which don't (without_issues).
+    - Create folders based on authors combinations (corresponding to nmrXiv projects).
+    - Create folders within the authors folders based on the molecules they submitted 
+    (corresponding to nmrXiv samples). 
+    - Write the NMReData files in the corresponding samples folders.
+    - Download all the raw NMR files from the links found in the NMReData file in the 
+    corresponding samples folders.
+    - Return the number of projects, molecules, samples, and spectra as a list.
+    """
+
+    print("""Downloading experimental NMR files. Here you can see the authors names 
+    from NMRShiftDB whose files are being downloaded: \n""")
 
     number_of_projects =0
-    number_of_studies =0
+    number_of_samples =0
     number_of_spectra =0
     
     mols = []
     
     os.makedirs("with_issues")
     os.makedirs("without_issues")
-    lst = ['Nadine Kümmerer', 
-           "Sean R. Johnson; Wajid Waheed Bhat; Radin Sadre; Garret P. Miller; Alekzander Sky Garcia; Björn Hamberger", 
-           "Sean Johnson",
-           "Franziska Reuß; Klaus-Peter Zeller; Hans-Ullrich Siehl; Stefan Berger; Dieter Sicker",
-           "Stefan Kuhn"]
+    
+    with_issues = [
+        'Nadine Kümmerer', 
+        'Sean R. Johnson; Wajid Waheed Bhat; Radin Sadre; Garret P. Miller; Alekzander Sky Garcia; Björn Hamberger', 
+        'Sean Johnson',
+        'Franziska Reuß; Klaus-Peter Zeller; Hans-Ullrich Siehl; Stefan Berger; Dieter Sicker',
+        'Stefan Kuhn']
 
     
     for mol in MolSupplier:
         authors = get_authors(mol)
         name = get_name(mol)
-        solvent = get_solvent(mol) 
         sample_name = get_sample_name(mol)
         
         mols.append(name)
         
-        if authors in lst:
+        if authors in with_issues:
             prefix = "with_issues/"
         else:
             prefix = "without_issues/"
@@ -145,7 +195,7 @@ def download_zips(MolSupplier):
         os.chdir('./'+ prefix+authors)
 
         if not os.path.exists(sample_name):
-            number_of_studies +=1
+            number_of_samples +=1
 
             os.makedirs(sample_name)
         os.chdir('./'+ sample_name)
@@ -162,27 +212,33 @@ def download_zips(MolSupplier):
                 print(name)
 
         os.chdir("../../..")
+        
     mols = set(mols)
     number_of_mols = len(mols)
-    return [number_of_projects, number_of_mols, number_of_studies, number_of_spectra]
+    return [number_of_projects, number_of_mols, number_of_samples, number_of_spectra]
 
 def create_datasets_folders():
-    """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
+    """Create folders for each dataset to unzip the downloaded spectrum file there.
+    The aim is to avoid unzipping files with the same content in the same folder.
+    Then delete the zip files as not wanted in nmrXiv submission."""
+    
     for authors in os.listdir("./without_issues"):
-        if os.path.isdir(authors):
-            project_folder = os.getcwd() + '/' + authors
+        if os.path.isdir("./without_issues/" + authors):
+            project_folder = os.getcwd() + '/without_issues/' + authors
             for molecule in os.listdir(project_folder):
                 if os.path.isdir(project_folder + '/' + molecule):
                     if os.path.isdir(project_folder + '/' + molecule):
                         study_folder = project_folder + '/' + molecule
-                        n = 0
                         for spectrum in os.listdir(study_folder):
                             if 'zip' in spectrum:
                                 name = spectrum[:spectrum.find('.')]
                                 dataset_folder = study_folder + '/' + name
                                 os.makedirs(dataset_folder)
                                 shutil.move(study_folder+ '/' +spectrum, dataset_folder)
+    
+    print("Creating folders to unzip spectra files is done.")
     pass
+
 
 def unzipper():
     """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
