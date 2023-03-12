@@ -21,7 +21,7 @@ from rdkit.Chem import SDMolSupplier
 def get_sdf_as_SDMolSupplier(url, name):
     "Download an sdf file from a URL into a named file, and return an SDMolSupplier object with the entries there."
     
-    print("""NMRShiftDB downloading script has started. Please find downloaded items in the folder 'output' where we provide two folders for projects that are ready for submission (without_issues), and the  problematic ones (with_issues) \n""")
+    print("""\nNMRShiftDB downloading script has started. Please find downloaded items in the folder 'output' where we provide two folders for projects that are ready for submission (without_issues), and the  problematic ones (with_issues) \n""")
     
     if not os.path.exists('output'):
         os.makedirs('output')
@@ -229,20 +229,22 @@ def create_datasets_folders():
     The aim is to avoid unzipping files with the same content in the same folder.
     Then delete the zip files as not wanted in nmrXiv submission."""
     
-    for authors in os.listdir("."):
-        if os.path.isdir("./" + authors):
-            project_folder = os.getcwd() + '/' + authors
-            for molecule in os.listdir(project_folder):
-                if os.path.isdir(project_folder + '/' + molecule):
-                    if os.path.isdir(project_folder + '/' + molecule):
-                        study_folder = project_folder + '/' + molecule
-                        for spectrum in os.listdir(study_folder):
-                            if 'zip' in spectrum:
-                                name = spectrum[:spectrum.find('.')]
-                                dataset_folder = study_folder + '/' + name
-                                os.makedirs(dataset_folder)
-                                shutil.move(study_folder+ '/' +spectrum, dataset_folder)
-    
+    for folder in os.listdir("./"):
+        if os.path.isdir("./" + folder):
+            for authors in os.listdir("./" + folder):
+                if os.path.isdir("./" + folder + '/' + authors):
+                    project_folder = os.getcwd()+ '/' + folder + '/' + authors
+                    for molecule in os.listdir(project_folder):
+                        if os.path.isdir(project_folder + '/' + molecule):
+                            if os.path.isdir(project_folder + '/' + molecule):
+                                study_folder = project_folder + '/' + molecule
+                                for spectrum in os.listdir(study_folder):
+                                    if 'zip' in spectrum:
+                                        name = spectrum[:spectrum.find('.')]
+                                        dataset_folder = study_folder + '/' + name
+                                        os.makedirs(dataset_folder)
+                                        shutil.move(study_folder+ '/' +spectrum, dataset_folder)
+
     print("Creating folders to unzip spectra files is done. \n")
     pass
 
@@ -251,30 +253,28 @@ def unzipper():
     """Create folders for each dataset and unzip the downloaded spectrum file there. 
     Then delete the zip files."""
     
-    print("""Unzipping spectra files in the corresponding created datasets folders. 
-    This might take a little while. Following, you can find the names of the authors 
-    folders where the spectra files are getting unzipped.\n""")
+    print("""Unzipping spectra files in the corresponding created datasets folders. This might take a little while. Following, you can find the names of the authors folders where the spectra files are getting unzipped.\n""")
+    with_siiues = ['Nadine Kümmerer']
     
-    
-    for authors in os.listdir("./"):
-        if os.path.isdir("./" + authors):
-            project_folder = os.getcwd() + '/' + authors
+
+    for authors in os.listdir("./without_issues"): 
+        if os.path.isdir("./without_issues/" + authors):
+            project_folder = os.getcwd() + '/without_issues/' + authors
             print(authors)
             for molecule in os.listdir(project_folder):
                 if os.path.isdir(project_folder + '/' + molecule):
-                    if os.path.isdir(project_folder + '/' + molecule):
-                        sample_folder = project_folder + '/' + molecule
-                        for spectrum in os.listdir(sample_folder):
-                            if os.path.isdir(sample_folder + '/' + spectrum):
-                                spectrum_folder = sample_folder + '/' + spectrum
-                                for file in os.listdir(spectrum_folder):
-                                    if '.zip' in spectrum_folder + '/' +file:
-                                        try:
-                                            with zipfile.ZipFile(spectrum_folder + '/' +file, 'r') as zip_ref:
-                                                zip_ref.extractall(spectrum_folder)
-                                            os.remove(spectrum_folder + '/' +file)
-                                        except:
-                                            print(spectrum_folder + '/' +file)
+                    sample_folder = project_folder + '/' + molecule
+                    for spectrum in os.listdir(sample_folder):
+                        if os.path.isdir(sample_folder + '/' + spectrum):
+                            spectrum_folder = sample_folder + '/' + spectrum
+                            for file in os.listdir(spectrum_folder):
+                                if '.zip' in spectrum_folder + '/' +file:
+                                    try:
+                                        with zipfile.ZipFile(spectrum_folder + '/' +file, 'r') as zip_ref:
+                                            zip_ref.extractall(spectrum_folder)
+                                        os.remove(spectrum_folder + '/' +file)
+                                    except:
+                                        print(spectrum_folder + '/' +file)
 
     for path, directories, files in os.walk("./without_issues"):
         for file in files:
@@ -286,6 +286,7 @@ def unzipper():
                 except:
                     print(path)
                
+    print('unzipping has ended')
     pass
 
 def get_Bruker_number(innerFolder):
@@ -314,9 +315,9 @@ def get_Bruker_number(innerFolder):
 def rename_folders():
     """Rename the Bruker folders for spectra that were initially named by users to 
     their original instrument name."""
-    for authors in os.listdir("./"): 
-        if os.path.isdir("./" + authors):
-            project_folder = os.getcwd() + '/' + authors
+    for authors in os.listdir("./without_issues"): 
+        if os.path.isdir("./without_issues/" + authors):
+            project_folder = os.getcwd() + '/without_issues/' + authors
             for molecule in os.listdir(project_folder):
                 study_folder = project_folder + '/' + molecule
                 if os.path.isdir(study_folder):
