@@ -179,7 +179,9 @@ def download_zips(MolSupplier):
         'Rainer Haessner',
         'Nils Schlörer',
         'Raphael Stoll',
-        'Stefan Berger; Dieter Sicker'
+        'Stefan Berger; Dieter Sicker',
+        'Stefan Berger; Philipp Drosky; Dieter Sicker; Kazuhide Nakata; Hans-Ullrich Siehl; Klaus-Peter Zeller; Madlen Sander',
+        'Meike Hahn; Eric von Ehlert; Laurent Bigler; Dolores Diaz Hernandez; Nils Schlörer'
     ]
 
 
