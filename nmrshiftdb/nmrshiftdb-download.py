@@ -24,5 +24,6 @@ def main():
     rename_folders()
     structure_folders()
     delete_empty_folders(os.getcwd())
+    print('\nThe process has ended successfully')
 if __name__ == "__main__":
     sys.exit(main())
