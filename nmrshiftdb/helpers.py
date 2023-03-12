@@ -21,7 +21,7 @@ from rdkit.Chem import SDMolSupplier
 def get_sdf_as_SDMolSupplier(url, name):
     "Download an sdf file from a URL into a named file, and return an SDMolSupplier object with the entries there."
     
-    print("""\nNMRShiftDB downloading script has started. Please find downloaded items in the folder 'output' where we provide two folders for projects that are ready for submission (without_issues), and the problematic ones (with_issues) \n""")
+    print("""NMRShiftDB downloading script has started. Please find downloaded items in the folder 'output' where we provide two folders for projects that are ready for submission (without_issues), and the  problematic ones (with_issues) \n""")
     
     if not os.path.exists('output'):
         os.makedirs('output')
@@ -50,7 +50,8 @@ def get_authors(mol):
     return authors
 
 def get_molecule_id(mol): 
-    """Returns the molecule NMRShiftDB ID from the corresponding tag NMREDATA_ID in a rdkit.Chem.rdchem Mol (mol)"""
+    """Returns the molecule NMRShiftDB ID from the corresponding tag NMREDATA_ID 
+    in a rdkit.Chem.rdchem Mol (mol)"""
 
     value = Mol.GetProp(mol, 'NMREDATA_ID')
     ID = value[value.find('DB_ID=')+6: -1]
@@ -58,7 +59,8 @@ def get_molecule_id(mol):
     return ID
 
 def get_links(mol):
-    """Returns the all the spectra links from one rdkit.Chem.rdchem Mol (mol), which corresponds to one NMReData block."""
+    """Returns the all the spectra links from one rdkit.Chem.rdchem Mol (mol),
+    which corresponds to one NMReData block."""
     
     spectra_tags = [tag for tag in mol.GetPropNames() if "1D" in tag or "2D" in tag]
     values = [Mol.GetProp(mol, tag) for tag in spectra_tags if 'http' in Mol.GetProp(mol, tag)]
@@ -68,7 +70,8 @@ def get_links(mol):
     return links
 
 def get_name(mol):
-    """Returns the molecule chemical name from the corresponding tag CHEMNAME in a rdkit.Chem.rdchem Mol (mol)"""
+    """Returns the molecule chemical name from the corresponding tag CHEMNAME 
+    in a rdkit.Chem.rdchem Mol (mol)"""
     
     name = Mol.GetProp(mol, 'CHEMNAME')
     
@@ -90,7 +93,9 @@ def get_name(mol):
     return name
 
 def get_sample_name(mol):
-    """A sample consists of molecule and solvent. Its name has the NMRShiftDB molecule ID with the names of the molecule and the solvent, taken from a rdkit.Chem.rdchem Mol (mol)"""
+    """A sample consists of molecule and solvent. 
+    Its name has the NMRShiftDB molecule ID with the names of the molecule and the solvent, 
+    taken from a rdkit.Chem.rdchem Mol (mol)"""
     
     ID =get_molecule_id(mol)
     name = get_name(mol)
@@ -100,7 +105,8 @@ def get_sample_name(mol):
     return sample_name
 
 def get_solvent(mol):
-    """Returns the NMR solvent from the corresponding tag NMREDATA_SOLVENT in a rdkit.Chem.rdchem Mol (mol)"""
+    """Returns the NMR solvent from the corresponding tag NMREDATA_SOLVENT 
+    in a rdkit.Chem.rdchem Mol (mol)"""
     
     solvent = Mol.GetProp(mol, 'NMREDATA_SOLVENT')
         
@@ -112,7 +118,8 @@ def get_solvent(mol):
     return solvent
 
 def get_temperature(mol):
-    """Returns the temperature from the corresponding tag NMREDATA_TEMPERATURE in a rdkit.Chem.rdchem Mol (mol)"""
+    """Returns the temperature from the corresponding tag NMREDATA_TEMPERATURE 
+    in a rdkit.Chem.rdchem Mol (mol)"""
     
     try:
         temperature = Mol.GetProp(mol, 'NMREDATA_TEMPERATURE')
@@ -123,7 +130,8 @@ def get_temperature(mol):
     return temperature
 
 def write_nmredata(mol):
-    """Writes a rdkit.Chem.rdchem Mol molecule in an NMReData file, named after its sample name and temperature."""
+    """Writes a rdkit.Chem.rdchem Mol molecule in an NMReData file,
+    named after its sample name and temperature."""
     
     sample_name = get_sample_name(mol)
     temp = get_temperature(mol)
@@ -217,11 +225,13 @@ def download_zips(MolSupplier):
     return [number_of_projects, number_of_mols, number_of_samples, number_of_spectra]
 
 def create_datasets_folders():
-    """Create folders for each dataset to unzip the downloaded spectrum file there. The aim is to avoid unzipping files with the same content in the same folder. Then delete the zip files as not wanted in nmrXiv submission."""
+    """Create folders for each dataset to unzip the downloaded spectrum file there.
+    The aim is to avoid unzipping files with the same content in the same folder.
+    Then delete the zip files as not wanted in nmrXiv submission."""
     
-    for authors in os.listdir("./without_issues"):
-        if os.path.isdir("./without_issues/" + authors):
-            project_folder = os.getcwd() + '/without_issues/' + authors
+    for authors in os.listdir("."):
+        if os.path.isdir("./" + authors):
+            project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
                 if os.path.isdir(project_folder + '/' + molecule):
                     if os.path.isdir(project_folder + '/' + molecule):
@@ -238,14 +248,17 @@ def create_datasets_folders():
 
 
 def unzipper():
-    """Create folders for each dataset and unzip the downloaded spectrum file there. Then delete the zip files."""
+    """Create folders for each dataset and unzip the downloaded spectrum file there. 
+    Then delete the zip files."""
     
-    print("""Unzipping spectra files in the corresponding created datasets folders. This might take a little while. Following, you can find the names of the authors folders where the spectra files are getting unzipped.\n""")
+    print("""Unzipping spectra files in the corresponding created datasets folders. 
+    This might take a little while. Following, you can find the names of the authors 
+    folders where the spectra files are getting unzipped.\n""")
     
     
-    for authors in os.listdir("./without_issues"):
-        if os.path.isdir("./without_issues/" + authors):
-            project_folder = os.getcwd() + '/without_issues/' + authors
+    for authors in os.listdir("./"):
+        if os.path.isdir("./" + authors):
+            project_folder = os.getcwd() + '/' + authors
             print(authors)
             for molecule in os.listdir(project_folder):
                 if os.path.isdir(project_folder + '/' + molecule):
@@ -299,28 +312,28 @@ def get_Bruker_number(innerFolder):
     pass
 
 def rename_folders():
-    """Rename the Bruker folders for spectra that were initially named by users to their original instrument name."""
-    for authors in os.listdir("./without_issues"): 
-        if os.path.isdir("./without_issues/" + authors):
-            project_folder = os.getcwd() + '/without_issues/' + authors
+    """Rename the Bruker folders for spectra that were initially named by users to 
+    their original instrument name."""
+    for authors in os.listdir("./"): 
+        if os.path.isdir("./" + authors):
+            project_folder = os.getcwd() + '/' + authors
             for molecule in os.listdir(project_folder):
                 study_folder = project_folder + '/' + molecule
                 if os.path.isdir(study_folder):
                     for spectrum in os.listdir(study_folder):
-                        if spectrum != '60003332_1H':
-                            dataset_folder = study_folder + '/' + spectrum
-                            if os.path.isdir(dataset_folder):
-                                innerFolder = dataset_folder
-                                while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
-                                    for item in os.listdir(innerFolder):
-                                        if os.path.isdir(innerFolder + '/' + item):
-                                            innerFolder +=  '/' + item
+                        dataset_folder = study_folder + '/' + spectrum
+                        if os.path.isdir(dataset_folder):
+                            innerFolder = dataset_folder
+                            while ("acqu" not in os.listdir(innerFolder)) and ("fid" not in os.listdir(innerFolder) and "ser" not in os.listdir(innerFolder)):
+                                for item in os.listdir(innerFolder):
+                                    if os.path.isdir(innerFolder + '/' + item):
+                                        innerFolder +=  '/' + item
 
 
-                                suffix = innerFolder[innerFolder.rfind("/")+1:]
-                                n = get_Bruker_number(innerFolder)
-                                target = innerFolder[:innerFolder.rfind(suffix)] +n
-                                os.rename(innerFolder, target)
+                            suffix = innerFolder[innerFolder.rfind("/")+1:]
+                            n = get_Bruker_number(innerFolder)
+                            target = innerFolder[:innerFolder.rfind(suffix)] +n
+                            os.rename(innerFolder, target)
     print("""Spectra folders were renamed to their original instrument number.""")
     pass
 
